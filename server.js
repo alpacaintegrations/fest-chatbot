@@ -90,9 +90,19 @@ const extractPrompt = prompts.getExtractPrompt(message);
       }
     }
     
-    // Gebruik de slimmere datum parser van prompts
-const datum = prompts.datumHelpers.parseUserDate(message);
-console.log('Determined date:', datum);
+    // Datum bepalen
+    const dates = config.getDates();
+    let datum = dates.today;
+    
+    if (message.toLowerCase().includes('vandaag') || message.toLowerCase().includes('vanavond')) {
+      datum = dates.today;
+    } else if (message.toLowerCase().includes('morgen')) {
+      datum = dates.tomorrow;
+    } else if (message.toLowerCase().includes('weekend')) {
+      datum = dates.weekend;
+    }
+    
+    console.log('Determined date:', datum);
     
     // Stap 3: Haal events op
     if (!cityId && !genreId && !venueId) {
@@ -164,10 +174,8 @@ app.get('/', (req, res) => {
   res.json({ status: 'Festival Chatbot API running' });
 });
 
-// Serve de standalone widget.html ipv de folder
-app.get('/widget', (req, res) => {
-  res.sendFile(__dirname + '/widget.html');
-});
+// Serve widget files
+app.use('/widget', express.static('widget'));
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
