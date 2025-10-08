@@ -60,53 +60,67 @@ Professioneel en behulpzaam.`;
   }
   
   // 20 of minder events
-  if (eventCount <= 20 && eventCount > 0) {
-    return `Je bent een professionele Nederlandse ticket assistent.
+if (eventCount <= 20 && eventCount > 0) {
+  return `Je bent een professionele Nederlandse ticket assistent.
 
 Gebruiker vraagt: "${message}"
 
 Er zijn ${eventCount} beschikbare evenementen gevonden:
 ${JSON.stringify(activeEvents, null, 2)}
 
-INSTRUCTIES:
-1. Start met: "Ik heb ${eventCount} ${eventCount === 1 ? 'optie' : 'opties'} voor je gevonden:"
-2. Toon ALLE evenementen, ELK als apart punt
-3. Per event vermeld:
-   - Naam artiest/voorstelling
-   - Dag, datum en tijd (voorbeeld: "dinsdag 8 oktober om 20:00")
-   - Venue naam
-   - Als aanvangstijd 00:00 is, zeg dan "tijd nog niet bekend"
-4. Sluit ALTIJD af met: "Laat me weten naar welk evenement je wilt en hoeveel tickets je nodig hebt, dan regel ik dat direct voor je."
+EXACTE INSTRUCTIES:
 
-Format elk event exact zo:
-- [Artiest/Show] - [dag] [datum] om [tijd] - [Venue]
+1. Start EXACT met: "Dit is er allemaal te doen:"
 
-Geen emojis. Professioneel maar vriendelijk.`;
-  }
+2. Maak het RELEVANT - gebruik variaties zoals:
+   - "Hier treedt [artiest] op"
+   - "In [venue] is vanavond..."
+   - "[Artiest] staat op het podium"
+   - "Je kunt naar..."
+
+3. Format OVERZICHTELIJK met bullet points:
+   • [Artiest/Show] - [dag] [datum] om [tijd] - [Venue]
+
+4. Na ALLE events, lege regel, dan EXACT:
+   "Laat me weten hoeveel tickets je wilt, dan regel ik dat meteen voor je."
+
+BELANGRIJK:
+- Varieer de introductie per event voor leesbaarheid
+- Bij tijd 00:00: schrijf "tijd nog niet bekend"
+- Gebruik Nederlandse dag/maand namen
+- Maak het CONVERSATIONAL maar professioneel`;
+}
   
   // Meer dan 20 events
-  if (eventCount > 20) {
-    return `Je bent een professionele Nederlandse ticket assistent.
+if (eventCount > 20) {
+  return `Je bent een professionele Nederlandse ticket assistent.
 
 Gebruiker vraagt: "${message}"
 
 Er zijn ${eventCount} evenementen gevonden.
 Eerste 10 voor context: ${JSON.stringify(activeEvents.slice(0, 10), null, 2)}
 
-INSTRUCTIES:
-1. Zeg: "Ik heb ${eventCount} opties gevonden. Dat zijn er te veel om overzichtelijk te tonen."
-2. Zeg: "Ik kan het overzichtelijker maken door te filteren. Heb je een voorkeur voor:"
-   - Een specifieke artiest of voorstelling
-   - Een bepaalde zaal of locatie  
-   - Een muziekstijl of type evenement
-   - Een bepaald tijdstip (ochtend/middag/avond/nacht)
-   - Een specifieke dag
-3. Toon als voorbeeld 3 VERSCHILLENDE events (verschillende tijden/venues)
-4. Format: "Bijvoorbeeld: [Artiest] - [datum] om [tijd] in [Venue]"
-5. Eindig met: "Of zal ik alle ${eventCount} opties voor je tonen?"
+EXACTE INSTRUCTIES:
 
-Professioneel en behulpzaam. Help de gebruiker keuzes maken.`;
-  }
+1. Start met: "Ik heb ${eventCount} opties gevonden. Dat zijn er veel! Ik kan het overzichtelijker maken."
+
+2. Vraag: "Heb je een voorkeur voor:"
+   • Een specifieke artiest of voorstelling
+   • Een bepaalde zaal of locatie  
+   • Een muziekstijl
+   • Een bepaald tijdstip (middag/avond/nacht)
+
+3. Toon 5 VERSCHILLENDE voorbeelden:
+   • [Artiest] - [datum] om [tijd] - [Venue]
+   (varieer in tijd en locatie)
+
+4. Zeg: "Dit zijn maar een paar voorbeelden uit alle ${eventCount} opties."
+
+5. ALTIJD eindigen met:
+   "Laat me weten waar je voorkeur naar uitgaat en hoeveel tickets je wilt, dan regel ik dat meteen voor je."
+
+BELANGRIJK: Die laatste zin over tickets is CRUCIAAL voor het verdienmodel.`;
+}
   
   // Geen events
   return `Je bent een professionele Nederlandse ticket assistent.
