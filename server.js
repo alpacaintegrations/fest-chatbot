@@ -135,7 +135,6 @@ if (entities.tijdslot && events.length > 0) {
         return true;
     }
   });
-  
   if (timeFiltered.length > 0) {
     events = timeFiltered;
     console.log(`Filtered to ${events.length} events for tijdslot: ${entities.tijdslot}`);
@@ -146,13 +145,10 @@ if (entities.tijdslot && events.length > 0) {
 // Format antwoord - entities meegeven voor context
 const formatPrompt = prompts.getFormatPrompt(message, events, entities);
 
-    // Format het antwoord
-const formatResult = await genAI.models.generateContent({
-  model: "gemini-2.0-flash-exp",
-  contents: formatPrompt
-});
+// Gemini call voor fallback responses
+const formatResult = await model.generateContent(formatPrompt);
 
-// Filter en structureer de events
+// Filter alleen actieve events
 const activeEvents = events.filter(e => !e.event_uitverkocht && !e.event_afgelast);
 
 // Maak structured response voor de widget
@@ -177,9 +173,9 @@ if (activeEvents.length > 0 && activeEvents.length <= 20) {
     }
   });
 } else {
-  // Voor andere cases (geen events, te veel events, etc.) gebruik Gemini's reply
+  // Voor andere cases gebruik Gemini's reply
   return res.json({ 
-    reply: formatResult.text 
+    reply: formatResult.response.candidates[0].content.parts[0].text
   });
 }
     const reply = formatResult.text;
