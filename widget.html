@@ -169,29 +169,32 @@
 </head>
 <body>
     <div class="chat-container">
-        <div class="chat-header">
-            <h3>🎵 Festival Chatbot</h3>
-            <p style="font-size: 14px; opacity: 0.9; margin-top: 5px;">Vind festivals en events in Nederland</p>
+    <div class="chat-header">
+        <h3>🎵 Festival Chatbot</h3>
+        <p style="font-size: 14px; opacity: 0.9; margin-top: 5px;">Vind festivals en events in Nederland</p>
+    </div>
+    
+    <div class="chat-messages" id="messages">
+        <div class="message bot">
+            <div class="message-bubble">
+                Hey! Waar kan ik je mee helpen?<br><br>
+                Ben je op zoek naar een specifiek evenement, podium, genre of artiest?<br><br>
+                Of wil je weten wat er allemaal op de agenda staat?
+            </div>
         </div>
         
-        <div class="message bot">
-    <div class="message-bubble">
-        Hey! Waar kan ik je mee helpen?<br><br>
-        
-        Ben je op zoek naar een specifiek evenement, podium, genre of artiest?<br><br>
-        
-        Of wil je weten wat er allemaal op de agenda staat?
+        <div class="quick-buttons" id="quickButtons">
+            <button onclick="sendQuick('Wat staat er vanavond op de agenda?')">Vanavond</button>
+            <button onclick="sendQuick('Dit weekend uitgaan')">Dit weekend</button>
+            <button onclick="sendQuick('Wat is er in Amsterdam?')">Amsterdam</button>
+        </div>
+    </div>
+    
+    <div class="chat-input">
+        <input type="text" id="messageInput" placeholder="Typ je vraag..." />
+        <button id="sendBtn" onclick="sendMessage()">Stuur</button>
     </div>
 </div>
-            
-            
-        </div>
-        
-        <div class="chat-input">
-            <input type="text" id="messageInput" placeholder="Typ je vraag..." />
-            <button id="sendBtn" onclick="sendMessage()">Stuur</button>
-        </div>
-    </div>
 
     <script>
         // Config
