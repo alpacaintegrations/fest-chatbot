@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const { GoogleGenAI } = require('@google/genai');
+const { GoogleGenAI } = require('@google/genai');  // <-- DE NIEUWE PACKAGE
 const config = require('./config');
 const prompts = require('./prompts');
 
@@ -8,7 +8,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const genAI = new GoogleGenAI({ apiKey: config.GEMINI_API_KEY });
+const genAI = new GoogleGenAI({ apiKey: config.GEMINI_API_KEY });  // <-- NIEUWE SYNTAX
 
 // Helper: call Railway proxy
 async function callAPI(endpoint, params = {}) {

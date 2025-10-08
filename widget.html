@@ -169,26 +169,26 @@
 </head>
 <body>
     <div class="chat-container">
-    <div class="chat-header">
-        <h3>🎵 Festival Chatbot</h3>
-        <p style="font-size: 14px; opacity: 0.9; margin-top: 5px;">Vind festivals en events in Nederland</p>
-    </div>
-    
-    <div class="chat-messages" id="messages">
-        <div class="message bot">
-            <div class="message-bubble">
-                Hey! Waar kan ik je mee helpen?<br><br>
-                Ben je op zoek naar een specifiek evenement, podium, genre of artiest?<br><br>
-                Of wil je weten wat er allemaal op de agenda staat?
+        <div class="chat-header">
+            <h3>🎵 Festival Chatbot</h3>
+            <p style="font-size: 14px; opacity: 0.9; margin-top: 5px;">Vind festivals en events in Nederland</p>
+        </div>
+        
+        <div class="chat-messages" id="messages">
+            <div class="message bot">
+                <div class="message-bubble">
+                    Hey! Waar kan ik je mee helpen?<br><br>
+                    Ben je op zoek naar een specifiek evenement, podium, genre of artiest?<br><br>
+                    Of wil je weten wat er allemaal op de agenda staat?
+                </div>
             </div>
         </div>
+        
+        <div class="chat-input">
+            <input type="text" id="messageInput" placeholder="Typ je vraag..." />
+            <button id="sendBtn" onclick="sendMessage()">Stuur</button>
+        </div>
     </div>
-    
-    <div class="chat-input">
-        <input type="text" id="messageInput" placeholder="Typ je vraag..." />
-        <button id="sendBtn" onclick="sendMessage()">Stuur</button>
-    </div>
-</div>
 
     <script>
         // Config
@@ -239,45 +239,34 @@
         }
         
         async function sendMessage() {
-    // ... existing code ...
-    
-    try {
-        const response = await fetch(API_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message })
-        });
-        
-        const data = await response.json();
-        hideTyping();
-        
-        // Check voor structured response
-        if (data.structured && data.structured.events) {
-            // Intro bericht
-            addMessage(`Ik heb ${data.structured.count} opties voor je gevonden:`);
+            const message = messageInput.value.trim();
+            if (!message) return;
             
-            // Elk event als apart bericht met delay
-            data.structured.events.forEach((event, index) => {
-                setTimeout(() => {
-                    addMessage(event.full_text);
-                }, (index + 1) * 150);
-            });
+            addMessage(message, true);
+            messageInput.value = '';
+            messageInput.disabled = true;
+            sendBtn.disabled = true;
             
-            // Ticket push als laatste
-            setTimeout(() => {
-                addMessage(data.structured.message);
-            }, (data.structured.events.length + 1) * 150);
-        } else {
-            // Fallback naar normale reply
-            addMessage(data.reply || 'Sorry, er ging iets mis.');
-        }
-        
-    } catch (error) {
-        console.error('Error:', error);
-        hideTyping();
-        addMessage('Er ging iets mis. Probeer het opnieuw.');
-    }
-
+            showTyping();
+            
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message })
+                });
+                
+                const data = await response.json();
+                hideTyping();
+                
+                // Gewoon de reply tonen, geen structured data
+                addMessage(data.reply || 'Sorry, er ging iets mis.');
+                
+            } catch (error) {
+                console.error('Error:', error);
+                hideTyping();
+                addMessage('Er ging iets mis. Probeer het opnieuw.');
+            }
             
             messageInput.disabled = false;
             sendBtn.disabled = false;
