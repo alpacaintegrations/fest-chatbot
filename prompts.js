@@ -29,20 +29,20 @@ Stad synoniemen:
 - 070 = Den Haag
 
 Output ALLEEN JSON:
-{"stad": "...", "genre": "...", "venue": "...", "tijdslot": "...", "datum": null}`
+{"stad": "...", "genre": "...", "venue": "...", "tijdslot": "...", "datum": null}`,
   // Format prompt - maakt het antwoord
-  getFormatPrompt: (message, events, originalFilters = {}) => {
-    // Filter uitverkochte en afgelaste events
-    const activeEvents = events.filter(e => !e.event_uitverkocht && !e.event_afgelast);
-    const eventCount = activeEvents.length;
+getFormatPrompt: (message, events, originalFilters = {}) => {
+  // Filter uitverkochte en afgelaste events
+  const activeEvents = events.filter(e => !e.event_uitverkocht && !e.event_afgelast);
+  const eventCount = activeEvents.length;
+  
+  // Als niks gevonden met filters
+  if (eventCount === 0 && originalFilters) {
+    const hasFilters = originalFilters.stad || originalFilters.venue || originalFilters.genre || originalFilters.tijdslot;
     
-    // Als niks gevonden met filters
-    if (eventCount === 0 && originalFilters) {
-      const hasFilters = originalFilters.stad || originalFilters.venue || originalFilters.genre || originalFilters.tijdslot;
-      
-      if (hasFilters) {
-        return `Je bent een professionele Nederlandse ticket assistent.
-      
+    if (hasFilters) {
+      return `Je bent een professionele Nederlandse ticket assistent.
+    
 Gebruiker vraagt: "${message}"
 
 Er zijn geen beschikbare evenementen gevonden met deze specifieke filters.
@@ -56,12 +56,12 @@ INSTRUCTIES:
 3. Vraag: "Wat heeft je voorkeur?"
 
 Professioneel en behulpzaam.`;
-      }
     }
-    
-    // 20 of minder events
-    if (eventCount <= 20 && eventCount > 0) {
-      return `Je bent een professionele Nederlandse ticket assistent.
+  }
+  
+  // 20 of minder events
+  if (eventCount <= 20 && eventCount > 0) {
+    return `Je bent een professionele Nederlandse ticket assistent.
 
 Gebruiker vraagt: "${message}"
 
@@ -82,11 +82,11 @@ Format elk event exact zo:
 - [Artiest/Show] - [dag] [datum] om [tijd] - [Venue]
 
 Geen emojis. Professioneel maar vriendelijk.`;
-    }
-    
-    // Meer dan 20 events
-    if (eventCount > 20) {
-      return `Je bent een professionele Nederlandse ticket assistent.
+  }
+  
+  // Meer dan 20 events
+  if (eventCount > 20) {
+    return `Je bent een professionele Nederlandse ticket assistent.
 
 Gebruiker vraagt: "${message}"
 
@@ -106,18 +106,18 @@ INSTRUCTIES:
 5. Eindig met: "Of zal ik alle ${eventCount} opties voor je tonen?"
 
 Professioneel en behulpzaam. Help de gebruiker keuzes maken.`;
-    }
+  }
+  
+  // Geen events
+  return `Je bent een professionele Nederlandse ticket assistent.
     
-    // Geen events
-    return `Je bent een professionele Nederlandse ticket assistent.
-      
 Gebruiker vraagt: "${message}"
 
 Er zijn geen evenementen gevonden.
 
 Vraag of je op een andere datum of in een andere stad kan zoeken.
 Wees behulpzaam en vraag wat de gebruiker graag wil zien.`;
-  },
+},  // <-- VERGEET DEZE KOMMA NIET!
 
   // Slimmere datum parsing
   datumHelpers: {
