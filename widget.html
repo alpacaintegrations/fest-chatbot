@@ -239,32 +239,45 @@
         }
         
         async function sendMessage() {
-            const message = messageInput.value.trim();
-            if (!message) return;
+    // ... existing code ...
+    
+    try {
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message })
+        });
+        
+        const data = await response.json();
+        hideTyping();
+        
+        // Check voor structured response
+        if (data.structured && data.structured.events) {
+            // Intro bericht
+            addMessage(`Ik heb ${data.structured.count} opties voor je gevonden:`);
             
-            addMessage(message, true);
-            messageInput.value = '';
-            messageInput.disabled = true;
-            sendBtn.disabled = true;
+            // Elk event als apart bericht met delay
+            data.structured.events.forEach((event, index) => {
+                setTimeout(() => {
+                    addMessage(event.full_text);
+                }, (index + 1) * 150);
+            });
             
-            showTyping();
-            
-            try {
-                const response = await fetch(API_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message })
-                });
-                
-                const data = await response.json();
-                hideTyping();
-                addMessage(data.reply || 'Sorry, er ging iets mis.');
-                
-            } catch (error) {
-                console.error('Error:', error);
-                hideTyping();
-                addMessage('Er ging iets mis. Probeer het opnieuw.');
-            }
+            // Ticket push als laatste
+            setTimeout(() => {
+                addMessage(data.structured.message);
+            }, (data.structured.events.length + 1) * 150);
+        } else {
+            // Fallback naar normale reply
+            addMessage(data.reply || 'Sorry, er ging iets mis.');
+        }
+        
+    } catch (error) {
+        console.error('Error:', error);
+        hideTyping();
+        addMessage('Er ging iets mis. Probeer het opnieuw.');
+    }
+
             
             messageInput.disabled = false;
             sendBtn.disabled = false;
