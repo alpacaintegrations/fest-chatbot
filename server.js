@@ -145,8 +145,11 @@ if (entities.tijdslot && events.length > 0) {
 // Format antwoord - entities meegeven voor context
 const formatPrompt = prompts.getFormatPrompt(message, events, entities);
 
-// Gemini call voor fallback responses
-const formatResult = await model.generateContent(formatPrompt);
+// Correcte Gemini call MET model specificatie
+const formatResult = await genAI.models.generateContent({
+  model: "gemini-2.0-flash-exp",
+  contents: formatPrompt
+});
 
 // Filter alleen actieve events
 const activeEvents = events.filter(e => !e.event_uitverkocht && !e.event_afgelast);
@@ -175,7 +178,7 @@ if (activeEvents.length > 0 && activeEvents.length <= 20) {
 } else {
   // Voor andere cases gebruik Gemini's reply
   return res.json({ 
-    reply: formatResult.response.candidates[0].content.parts[0].text
+    reply: formatResult.text  // <-- formatResult.text is de juiste path voor deze API call
   });
 }
     const reply = formatResult.text;
