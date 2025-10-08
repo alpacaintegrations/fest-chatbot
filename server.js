@@ -135,6 +135,7 @@ if (entities.tijdslot && events.length > 0) {
         return true;
     }
   });
+  
   if (timeFiltered.length > 0) {
     events = timeFiltered;
     console.log(`Filtered to ${events.length} events for tijdslot: ${entities.tijdslot}`);
@@ -145,42 +146,10 @@ if (entities.tijdslot && events.length > 0) {
 // Format antwoord - entities meegeven voor context
 const formatPrompt = prompts.getFormatPrompt(message, events, entities);
 
-// Correcte Gemini call MET model specificatie
-const formatResult = await genAI.models.generateContent({
-  model: "gemini-2.0-flash-exp",
-  contents: formatPrompt
-});
-
-// Filter alleen actieve events
-const activeEvents = events.filter(e => !e.event_uitverkocht && !e.event_afgelast);
-
-// Maak structured response voor de widget
-if (activeEvents.length > 0 && activeEvents.length <= 20) {
-  // Stuur structured data voor mooie weergave
-  return res.json({
-    structured: {
-      count: activeEvents.length,
-      intro: `Ik heb ${activeEvents.length} ${activeEvents.length === 1 ? 'optie' : 'opties'} voor je gevonden:`,
-      events: activeEvents.map(event => {
-        const [datum, tijd] = event.event_date_time.split(' ');
-        const timeStr = tijd === '00:00:00' ? 'tijd nog niet bekend' : tijd.substring(0, 5);
-        return {
-          name: event.event_name,
-          venue: event.podium_name,
-          time: timeStr,
-          date: datum,
-          formatted: `${event.event_name} - ${timeStr} - ${event.podium_name}`
-        };
-      }),
-      footer: "Laat me weten hoeveel tickets je wilt, dan regel ik dat meteen voor je."
-    }
-  });
-} else {
-  // Voor andere cases gebruik Gemini's reply
-  return res.json({ 
-    reply: formatResult.text  // <-- formatResult.text is de juiste path voor deze API call
-  });
-}
+    const formatResult = await genAI.models.generateContent({
+      model: "gemini-2.0-flash-exp",
+      contents: formatPrompt
+    });
     const reply = formatResult.text;
     
     return res.json({ reply });
