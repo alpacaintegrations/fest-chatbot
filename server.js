@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const { GoogleGenAI } = require('@google/genai');
 const config = require('./config');
+const prompts = require('./prompts');
 
 const app = express();
 app.use(cors());
@@ -33,8 +34,7 @@ app.post('/chat', async (req, res) => {
     const { message } = req.body;
     console.log('\n=== User message:', message);
     
-  const prompts = require('./prompts');
-const extractPrompt = prompts.getExtractPrompt(message);
+    const extractPrompt = prompts.getExtractPrompt(message);
 
     const extractResult = await genAI.models.generateContent({
       model: "gemini-2.0-flash-exp",
@@ -90,18 +90,8 @@ const extractPrompt = prompts.getExtractPrompt(message);
       }
     }
     
-    // Datum bepalen
-    const dates = config.getDates();
-    let datum = dates.today;
-    
-    if (message.toLowerCase().includes('vandaag') || message.toLowerCase().includes('vanavond')) {
-      datum = dates.today;
-    } else if (message.toLowerCase().includes('morgen')) {
-      datum = dates.tomorrow;
-    } else if (message.toLowerCase().includes('weekend')) {
-      datum = dates.weekend;
-    }
-    
+    // Gebruik de slimmere datum parser van prompts
+    const datum = prompts.datumHelpers.parseUserDate(message);
     console.log('Determined date:', datum);
     
     // Stap 3: Haal events op
@@ -118,50 +108,47 @@ const extractPrompt = prompts.getExtractPrompt(message);
     console.log('Event params:', eventParams);
     
     const eventsData = await callAPI(config.endpoints.events, eventParams);
-console.log('Events response:', eventsData);
+    console.log('Events response:', eventsData);
 
-let events = eventsData?.data || [];  // <-- LET ipv CONST
+    let events = eventsData?.data || [];
 
-if (!events || events.length === 0) {
-  return res.json({ reply: "Geen evenementen gevonden met deze filters. Probeer iets anders!" });
-}
-
-// ============ HIER KOMT DE TIJDFILTER ============
-// Filter op tijdslot als gebruiker een tijd heeft aangegeven
-if (entities.tijdslot && events.length > 0) {
-  const timeFiltered = events.filter(event => {
-    const hour = parseInt(event.event_date_time.split(' ')[1].split(':')[0]);
-    
-    switch(entities.tijdslot) {
-      case 'ochtend':
-        return hour >= 6 && hour < 12;
-      case 'middag':
-        return hour >= 12 && hour < 17;
-      case 'avond':
-        return hour >= 17 && hour < 24;
-      case 'nacht':
-        return hour >= 22 || hour < 6;
-      default:
-        return true;
+    if (!events || events.length === 0) {
+      return res.json({ reply: "Geen evenementen gevonden met deze filters. Probeer iets anders!" });
     }
-  });
-  
-  if (timeFiltered.length > 0) {
-    events = timeFiltered;
-    console.log(`Filtered to ${events.length} events for tijdslot: ${entities.tijdslot}`);
-  }
-}
-// ============ EINDE TIJDFILTER ============
 
-// Format antwoord - entities meegeven voor context
-const formatPrompt = prompts.getFormatPrompt(message, events, entities);
+    // Filter op tijdslot als gebruiker een tijd heeft aangegeven
+    if (entities.tijdslot && events.length > 0) {
+      const timeFiltered = events.filter(event => {
+        const hour = parseInt(event.event_date_time.split(' ')[1].split(':')[0]);
+        
+        switch(entities.tijdslot) {
+          case 'ochtend':
+            return hour >= 6 && hour < 12;
+          case 'middag':
+            return hour >= 12 && hour < 17;
+          case 'avond':
+            return hour >= 17 && hour < 24;
+          case 'nacht':
+            return hour >= 22 || hour < 6;
+          default:
+            return true;
+        }
+      });
+      if (timeFiltered.length > 0) {
+        events = timeFiltered;
+        console.log(`Filtered to ${events.length} events for tijdslot: ${entities.tijdslot}`);
+      }
+    }
+
+    // Format antwoord met Gemini
+    const formatPrompt = prompts.getFormatPrompt(message, events, entities);
 
     const formatResult = await genAI.models.generateContent({
       model: "gemini-2.0-flash-exp",
       contents: formatPrompt
     });
-    const reply = formatResult.text;
     
+    const reply = formatResult.text;
     return res.json({ reply });
     
   } catch (error) {
@@ -174,8 +161,9 @@ app.get('/', (req, res) => {
   res.json({ status: 'Festival Chatbot API running' });
 });
 
-// Serve widget files
-app.use('/widget', express.static('widget'));
+app.get('/widget', (req, res) => {
+  res.sendFile(__dirname + '/widget.html');
+});
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
