@@ -174,8 +174,10 @@ app.get('/', (req, res) => {
   res.json({ status: 'Festival Chatbot API running' });
 });
 
-// Serve widget files
-app.use('/widget', express.static('widget'));
+// Serve de standalone widget.html ipv de folder
+app.get('/widget', (req, res) => {
+  res.sendFile(__dirname + '/widget.html');
+});
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
