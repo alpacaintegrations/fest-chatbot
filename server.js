@@ -147,7 +147,14 @@ if (events.length > 0) {
       }
     }
 
-    // Format antwoord met Gemini
+    // Filter op EXACTE datum - HIER!
+if (datum) {
+  events = events.filter(event => {
+    const eventDate = event.event_date_time.split(' ')[0];
+    return eventDate === datum;
+  });
+  console.log(`Filtered to ${events.length} events on exact date: ${datum}`);
+}
     // Maak structured response
     const eventCount = events.length;
 
