@@ -7,6 +7,8 @@ const API_URL = window.location.hostname === 'localhost'
 const messagesDiv = document.getElementById('messages');
 const messageInput = document.getElementById('messageInput');
 const sendBtn = document.getElementById('sendBtn');
+// Conversation history
+let conversationHistory = [];
 
 // Add message to chat
 function addMessage(text, isUser = false) {
@@ -93,6 +95,12 @@ async function sendMessage() {
     // Add user message
     addMessage(message, true);
     
+    // Save to history
+conversationHistory.push({
+    role: 'user',
+    content: message
+});
+
     // Clear input and disable
     messageInput.value = '';
     messageInput.disabled = true;
@@ -107,7 +115,10 @@ async function sendMessage() {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ message })
+            body: JSON.stringify({ 
+    message,
+    history: conversationHistory.slice(-20)
+})
         });
         
         const data = await response.json();
@@ -120,6 +131,16 @@ async function sendMessage() {
             // Structured response
             addMessage(data.intro);
             
+            // Save bot intro to history
+if (data.intro) {
+    conversationHistory.push({
+        role: 'assistant',
+        content: data.intro
+    });
+}
+
+addMessage(data.intro);
+
             // Add event cards
             data.events.forEach(event => {
                 addEventCard(event);
