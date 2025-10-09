@@ -32,10 +32,24 @@ async function callAPI(endpoint, params = {}) {
 // Chat endpoint
 app.post('/chat', async (req, res) => {
   try {
-    const { message } = req.body;
-    console.log('\n=== User message:', message);
+    const { message, history } = req.body;
+console.log('\n=== User message:', message);
+if (history && history.length > 0) {
+  console.log('Conversation history:', history.length, 'messages');
+}
     
-    const extractPrompt = prompts.getExtractPrompt(message);
+    // Voeg context toe als er history is
+let contextMessage = message;
+if (history && history.length > 0) {
+  const lastUserMsg = history.slice(-3).filter(h => h.role === 'user').pop();
+  const lastBotMsg = history.slice(-3).filter(h => h.role === 'assistant').pop();
+  
+  if (lastUserMsg && lastBotMsg) {
+    contextMessage = `Eerdere context:\nGebruiker vroeg: "${lastUserMsg.content}"\nBot antwoordde: "${lastBotMsg.content}"\n\nNieuwe vraag: "${message}"`;
+  }
+}
+
+const extractPrompt = prompts.getExtractPrompt(contextMessage);
 
     const extractResult = await genAI.models.generateContent({
       model: "gemini-2.0-flash-exp",
