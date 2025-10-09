@@ -34,6 +34,11 @@ TIJDSLOT HERKENNING - BELANGRIJK:
 - ALLEEN bij "ochtend", "'s ochtends", "vroeg", "voor de middag" -> "ochtend"
 
 Context regels:
+- Als er eerdere context is over een stad/datum/venue, EN de nieuwe vraag noemt GEEN nieuwe stad/datum/venue, gebruik dan de oude
+- Voorbeelden:
+  * Context: "Amsterdam deze week" → Nieuwe vraag: "tussen 8 en 10" → Behoud Amsterdam + deze week
+  * Context: "Paradiso" → Nieuwe vraag: "vanavond" → Behoud Paradiso
+  * Nieuwe vraag noemt NIEUWE stad → Gebruik nieuwe stad (overschrijf oude)
 - Bij twijfel tussen avond/ochtend: kies avond (meer events)
 - "Feesten", "stappen", "uitgaan" -> altijd "nacht"
 - "Festival" zonder tijd -> geen tijdslot (hele dag)
