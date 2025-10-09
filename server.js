@@ -7,7 +7,8 @@ const prompts = require('./prompts');
 const app = express();
 app.use(cors());
 app.use(express.json());
-
+// Serve static files from widget folder
+app.use('/widget', express.static('widget'));
 const genAI = new GoogleGenAI({ apiKey: config.GEMINI_API_KEY });  // <-- NIEUWE SYNTAX
 
 // Helper: call Railway proxy
@@ -176,9 +177,6 @@ app.get('/', (req, res) => {
   res.json({ status: 'Festival Chatbot API running' });
 });
 
-app.get('/widget', (req, res) => {
-  res.sendFile(__dirname + '/widget.html');
-});
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
