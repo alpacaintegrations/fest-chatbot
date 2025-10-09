@@ -92,8 +92,9 @@ app.post('/chat', async (req, res) => {
     }
     
     // Gebruik de slimmere datum parser van prompts
-    const datum = prompts.datumHelpers.parseUserDate(message);
-    console.log('Determined date:', datum);
+    // Gebruik de slimmere datum parser van prompts
+const datum = prompts.datumHelpers.parseUserDate(message);
+console.log('Determined date:', datum);
     
     // Stap 3: Haal events op
     if (!cityId && !genreId && !venueId) {

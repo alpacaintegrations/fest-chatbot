@@ -1,13 +1,28 @@
 module.exports = {
   // Extract prompt - haalt entities uit gebruiker vraag
-  getExtractPrompt: (message) => `Analyseer deze vraag: "${message}"
+  getExtractPrompt: (message) => {
+  const today = new Date();
+  const todayStr = today.toISOString().split('T')[0];
+  const dayNames = ['zondag', 'maandag', 'dinsdag', 'woensdag', 'donderdag', 'vrijdag', 'zaterdag'];
+  const todayName = dayNames[today.getDay()];
+  
+  return `Analyseer deze vraag: "${message}"
+
+BELANGRIJKE CONTEXT - VANDAAG:
+Datum: ${todayStr} (${todayName})
 
 Extract de volgende informatie:
 - stad: Nederlandse stad naam (Amsterdam, Utrecht, Rotterdam, Den Haag, etc.) of null
 - venue: podium/zaal naam (Paradiso, Melkweg, Ziggo Dome, AFAS Live, Carré, etc.) of null  
 - genre: muziekstijl (rock, pop, jazz, techno, metal, dance, cabaret, comedy, etc.) of null
 - tijdslot: tijd indicatie (ochtend, middag, avond, nacht) of null
-- datum: NIET INVULLEN, altijd null
+- datum: Converteer naar YYYY-MM-DD formaat gebaseerd op VANDAAG (${todayStr}):
+  * "vandaag" / "vanavond" / "vanmiddag" → ${todayStr}
+  * "morgen" / "morgenavond" → ${new Date(today.getTime() + 86400000).toISOString().split('T')[0]}
+  * "overmorgen" → ${new Date(today.getTime() + 172800000).toISOString().split('T')[0]}
+  * "dit weekend" → aankomende zaterdag vanaf vandaag
+  * "volgende week" → +7 dagen
+  * Als GEEN datum genoemd: null
 
 TIJDSLOT HERKENNING - BELANGRIJK:
 - "vanavond", "'s avonds", "avond" -> "avond"
@@ -29,7 +44,8 @@ Stad synoniemen:
 - 070 = Den Haag
 
 Output ALLEEN JSON:
-{"stad": "...", "genre": "...", "venue": "...", "tijdslot": "...", "datum": null}`,
+{"stad": "...", "genre": "...", "venue": "...", "tijdslot": "...", "datum": "YYYY-MM-DD of null"}`;
+},
   // Format prompt - maakt het antwoord
 getFormatPrompt: (message, events, originalFilters = {}) => {
   // Filter uitverkochte en afgelaste events
