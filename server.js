@@ -111,6 +111,10 @@ app.post('/chat', async (req, res) => {
     console.log('Events response:', eventsData);
 
     let events = eventsData?.data || [];
+    // DEBUG: log eerste event om veldnamen te zien
+if (events.length > 0) {
+  console.log('FIRST EVENT STRUCTURE:', JSON.stringify(events[0], null, 2));
+}
 
     if (!events || events.length === 0) {
       return res.json({ reply: "Geen evenementen gevonden met deze filters. Probeer iets anders!" });
