@@ -32,7 +32,7 @@ async function callAPI(endpoint, params = {}) {
 // Chat endpoint
 app.post('/chat', async (req, res) => {
   try {
-    const { message, history } = req.body;
+    const { message, history, lastEntities } = req.body;
 console.log('\n=== User message:', message);
 if (history && history.length > 0) {
   console.log('Conversation history:', history.length, 'messages');
@@ -67,7 +67,14 @@ const extractPrompt = prompts.getExtractPrompt(contextMessage);
     
     const entities = JSON.parse(jsonMatch[0]);
     console.log('Entities:', entities);
-    
+    // Gebruik lastEntities als fallback voor lege velden
+if (lastEntities) {
+  if (!entities.stad && lastEntities.stad) entities.stad = lastEntities.stad;
+  if (!entities.datum && lastEntities.datum) entities.datum = lastEntities.datum;
+  if (!entities.genre && lastEntities.genre) entities.genre = lastEntities.genre;
+  if (!entities.venue && lastEntities.venue) entities.venue = lastEntities.venue;
+  console.log('Merged with lastEntities:', entities);
+}
     // Stap 2: Haal IDs op
     let cityId = null;
     let genreId = null;
