@@ -156,25 +156,45 @@ if (datum) {
   console.log(`Filtered to ${events.length} events on exact date: ${datum}`);
 }
     // Maak structured response
-    const eventCount = events.length;
+    // Maak structured response met originele logica
+const eventCount = events.length;
 
-    const response = {
-      intro: eventCount > 20 
-        ? `Ik heb ${eventCount} opties gevonden. Dat zijn er veel! Hier zijn wat highlights:` 
-        : "Dit is er allemaal te doen:",
-      events: events.slice(0, 20).map(e => ({
-  id: e.event_id,
-  titel: e.event_titel || e.titel || e.event_name || 'Event',  // <-- FIX: meerdere opties
-  datum: e.event_date_time.split(' ')[0],
-  tijd: e.event_date_time.split(' ')[1] || 'Tijd nog niet bekend',
-  venue: e.podium_name,
-  stad: e.city_woonplaats
-})),
-      outro: "Laat me weten hoeveel tickets je wilt, dan regel ik dat meteen voor je.",
-      totalCount: eventCount
-    };
+let intro, eventsToShow, outro;
 
-    return res.json(response);
+if (eventCount <= 20 && eventCount > 0) {
+  // 20 of minder - toon alles
+  intro = "Dit is er allemaal te doen:";
+  eventsToShow = events;
+  outro = "Laat me weten hoeveel tickets je wilt, dan regel ik dat meteen voor je.";
+  
+} else if (eventCount > 20) {
+  // Meer dan 20 - toon voorbeelden en vraag voorkeur
+  intro = `Ik heb ${eventCount} opties gevonden. Dat zijn er veel! Ik kan het overzichtelijker maken.`;
+  eventsToShow = events.slice(0, 5); // 5 diverse voorbeelden
+  outro = `Dit zijn maar een paar voorbeelden uit alle ${eventCount} opties. Heb je een voorkeur voor:\n• Een specifieke artiest of voorstelling\n• Een bepaalde zaal of locatie\n• Een muziekstijl\n• Een bepaald tijdstip (middag/avond/nacht)\n\nLaat me weten waar je voorkeur naar uitgaat en hoeveel tickets je wilt, dan regel ik dat meteen voor je.`;
+  
+} else {
+  // Geen events
+  intro = "Geen evenementen gevonden met deze filters.";
+  eventsToShow = [];
+  outro = "Probeer een andere datum of stad.";
+}
+
+const response = {
+  intro: intro,
+  events: eventsToShow.map(e => ({
+    id: e.event_id,
+    titel: e.event_titel || e.titel || e.event_name || 'Event',
+    datum: e.event_date_time.split(' ')[0],
+    tijd: e.event_date_time.split(' ')[1] || 'Tijd nog niet bekend',
+    venue: e.podium_name,
+    stad: e.city_woonplaats
+  })),
+  outro: outro,
+  totalCount: eventCount
+};
+
+return res.json(response);
     
   } catch (error) {
     console.error('Error:', error);
