@@ -204,13 +204,14 @@ if (eventCount <= 20 && eventCount > 0) {
 const response = {
   intro: intro,
   events: eventsToShow.map(e => ({
-    id: e.event_id,
-    titel: e.event_titel || e.titel || e.event_name || 'Event',
-    datum: e.event_date_time.split(' ')[0],
-    tijd: e.event_date_time.split(' ')[1] || 'Tijd nog niet bekend',
-    venue: e.podium_name,
-    stad: e.city_woonplaats
-  })),
+  id: e.event_id,
+  titel: e.event_titel || e.titel || e.event_name || 'Event',
+  datum: e.event_date_time.split(' ')[0],
+  tijd: e.event_date_time.split(' ')[1] || 'Tijd nog niet bekend',
+  venue: e.podium_name,
+  stad: e.city_woonplaats,
+  beschrijving: e.event_extra_info || 'Geen beschrijving beschikbaar'  // NIEUW
+})),
   outro: outro,
   totalCount: eventCount,
   entities: {  // VOEG DIT TOE
