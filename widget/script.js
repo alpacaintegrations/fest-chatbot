@@ -38,6 +38,8 @@ function addEventCard(event) {
     const cardDiv = document.createElement('div');
     cardDiv.className = 'event-card';
     
+    const eventId = `event-${event.id}`;
+    
     cardDiv.innerHTML = `
         <div class="event-header">
             <span class="event-title">${event.titel}</span>
@@ -50,10 +52,30 @@ function addEventCard(event) {
                 📍 ${event.venue}${event.stad ? ', ' + event.stad : ''}
             </div>
         </div>
+        <div class="event-description" id="${eventId}-desc" style="display: none;">
+            <p>${event.beschrijving}</p>
+        </div>
+        <button class="event-toggle-btn" id="${eventId}-btn" onclick="toggleEventInfo('${eventId}')">
+            Meer info ▼
+        </button>
     `;
     
     messagesDiv.appendChild(cardDiv);
     messagesDiv.scrollTop = messagesDiv.scrollHeight;
+}
+
+// Toggle event description
+function toggleEventInfo(eventId) {
+    const descDiv = document.getElementById(`${eventId}-desc`);
+    const btn = document.getElementById(`${eventId}-btn`);
+    
+    if (descDiv.style.display === 'none') {
+        descDiv.style.display = 'block';
+        btn.textContent = 'Minder info ▲';
+    } else {
+        descDiv.style.display = 'none';
+        btn.textContent = 'Meer info ▼';
+    }
 }
 
 // Helper voor datum formatting
