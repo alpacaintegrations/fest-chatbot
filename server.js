@@ -205,7 +205,14 @@ const response = {
     stad: e.city_woonplaats
   })),
   outro: outro,
-  totalCount: eventCount
+  totalCount: eventCount,
+  entities: {  // VOEG DIT TOE
+    stad: entities.stad,
+    datum: datum,
+    genre: entities.genre,
+    venue: entities.venue,
+    tijdslot: entities.tijdslot
+  }
 };
 
 return res.json(response);

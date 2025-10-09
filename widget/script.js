@@ -9,6 +9,7 @@ const messageInput = document.getElementById('messageInput');
 const sendBtn = document.getElementById('sendBtn');
 // Conversation history
 let conversationHistory = [];
+let lastEntities = null; // NIEUW
 
 // Add message to chat
 function addMessage(text, isUser = false) {
@@ -117,7 +118,8 @@ conversationHistory.push({
             },
             body: JSON.stringify({ 
     message,
-    history: conversationHistory.slice(-20)
+    history: conversationHistory.slice(-20),
+    lastEntities: lastEntities
 })
         });
         
@@ -137,6 +139,11 @@ if (data.intro) {
         role: 'assistant',
         content: data.intro
     });
+}
+
+// Save entities for next request
+if (data.entities) {
+    lastEntities = data.entities;
 }
 
 addMessage(data.intro);
