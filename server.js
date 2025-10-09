@@ -141,15 +141,26 @@ app.post('/chat', async (req, res) => {
     }
 
     // Format antwoord met Gemini
-    const formatPrompt = prompts.getFormatPrompt(message, events, entities);
+    // Maak structured response
+    const eventCount = events.length;
 
-    const formatResult = await genAI.models.generateContent({
-      model: "gemini-2.0-flash-exp",
-      contents: formatPrompt
-    });
-    
-    const reply = formatResult.text;
-    return res.json({ reply });
+    const response = {
+      intro: eventCount > 20 
+        ? `Ik heb ${eventCount} opties gevonden. Dat zijn er veel! Hier zijn wat highlights:` 
+        : "Dit is er allemaal te doen:",
+      events: events.slice(0, 20).map(e => ({
+        id: e.event_id,
+        titel: e.event_titel,
+        datum: e.event_date_time.split(' ')[0],
+        tijd: e.event_date_time.split(' ')[1] || 'Tijd nog niet bekend',
+        venue: e.podium_name,
+        stad: e.city_woonplaats
+      })),
+      outro: "Laat me weten hoeveel tickets je wilt, dan regel ik dat meteen voor je.",
+      totalCount: eventCount
+    };
+
+    return res.json(response);
     
   } catch (error) {
     console.error('Error:', error);

@@ -205,4 +205,4 @@ Wees behulpzaam en vraag wat de gebruiker graag wil zien.`;
       return today.toISOString().split('T')[0];
     }
   }
-};
+}; 

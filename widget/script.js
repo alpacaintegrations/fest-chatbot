@@ -30,6 +30,38 @@ function addMessage(text, isUser = false) {
     messagesDiv.scrollTop = messagesDiv.scrollHeight;
 }
 
+// Nieuwe functie voor event cards
+function addEventCard(event) {
+    const cardDiv = document.createElement('div');
+    cardDiv.className = 'event-card';
+    
+    cardDiv.innerHTML = `
+        <div class="event-header">
+            <span class="event-title">${event.titel}</span>
+        </div>
+        <div class="event-details">
+            <div class="event-info">
+                📅 ${formatDatum(event.datum)} om ${event.tijd}
+            </div>
+            <div class="event-info">
+                📍 ${event.venue}${event.stad ? ', ' + event.stad : ''}
+            </div>
+        </div>
+    `;
+    
+    messagesDiv.appendChild(cardDiv);
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+}
+
+// Helper voor datum formatting
+function formatDatum(dateStr) {
+    const datum = new Date(dateStr);
+    const dagen = ['zondag', 'maandag', 'dinsdag', 'woensdag', 'donderdag', 'vrijdag', 'zaterdag'];
+    const maanden = ['jan', 'feb', 'mrt', 'apr', 'mei', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec'];
+    
+    return `${dagen[datum.getDay()]} ${datum.getDate()} ${maanden[datum.getMonth()]}`;
+}
+
 // Show typing indicator
 function showTyping() {
     const typingDiv = document.createElement('div');
@@ -82,7 +114,25 @@ async function sendMessage() {
         
         // Hide typing and show response
         hideTyping();
-        addMessage(data.reply || 'Sorry, er ging iets mis. Probeer het opnieuw.');
+        
+        // Check if we got structured data or plain text
+        if (data.intro && data.events) {
+            // Structured response
+            addMessage(data.intro);
+            
+            // Add event cards
+            data.events.forEach(event => {
+                addEventCard(event);
+            });
+            
+            // Add outro
+            addMessage(data.outro);
+        } else if (data.reply) {
+            // Plain text response (fallback)
+            addMessage(data.reply);
+        } else {
+            addMessage('Sorry, er ging iets mis. Probeer het opnieuw.');
+        }
         
     } catch (error) {
         console.error('Error:', error);

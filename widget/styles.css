@@ -239,3 +239,39 @@ body {
 .chat-messages::-webkit-scrollbar-thumb:hover {
     background: #999;
 }
+/* Event Cards */
+.event-card {
+    background: white;
+    border-radius: 12px;
+    padding: 16px;
+    margin: 12px 0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    border-left: 4px solid #764ba2;
+    animation: slideIn 0.3s ease;
+    max-width: 85%;
+}
+
+.event-header {
+    margin-bottom: 12px;
+}
+
+.event-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+    display: block;
+}
+
+.event-details {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.event-info {
+    font-size: 14px;
+    color: #666;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
