@@ -154,13 +154,13 @@ if (events.length > 0) {
         ? `Ik heb ${eventCount} opties gevonden. Dat zijn er veel! Hier zijn wat highlights:` 
         : "Dit is er allemaal te doen:",
       events: events.slice(0, 20).map(e => ({
-        id: e.event_id,
-        titel: e.event_titel,
-        datum: e.event_date_time.split(' ')[0],
-        tijd: e.event_date_time.split(' ')[1] || 'Tijd nog niet bekend',
-        venue: e.podium_name,
-        stad: e.city_woonplaats
-      })),
+  id: e.event_id,
+  titel: e.event_titel || e.titel || e.event_name || 'Event',  // <-- FIX: meerdere opties
+  datum: e.event_date_time.split(' ')[0],
+  tijd: e.event_date_time.split(' ')[1] || 'Tijd nog niet bekend',
+  venue: e.podium_name,
+  stad: e.city_woonplaats
+})),
       outro: "Laat me weten hoeveel tickets je wilt, dan regel ik dat meteen voor je.",
       totalCount: eventCount
     };
