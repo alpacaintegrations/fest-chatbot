@@ -1,7 +1,7 @@
 module.exports = {
   // API configuratie
-  API_BASE_URL: 'https://fest-proxy-production.up.railway.app',
-  GEMINI_API_KEY: 'AIzaSyB8jlyZg_6TJ0__exGifXiE8FM6xACA2p0',
+  API_BASE_URL: process.env.API_BASE_URL || 'https://fest-proxy-production.up.railway.app',
+  CLAUDE_API_KEY: process.env.CLAUDE_API_KEY,  // <-- ANTHROPIC KEY
   
   // Endpoints
   endpoints: {
