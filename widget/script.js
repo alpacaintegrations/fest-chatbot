@@ -125,25 +125,31 @@ conversationHistory.push({
 });
 
     // Clear input and disable
-    messageInput.value = '';
-    messageInput.disabled = true;
-    sendBtn.disabled = true;
+messageInput.value = '';
+messageInput.disabled = true;
+sendBtn.disabled = true;
+
+// Show typing
+showTyping();
+
+try {
+    console.log('=== WIDGET DEBUG ===');
+    console.log('Message:', message);
+    console.log('History length:', conversationHistory.length);
+    console.log('History:', conversationHistory);
+    console.log('==================');
     
-    // Show typing
-    showTyping();
-    
-    try {
-        const response = await fetch(API_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ 
-    message,
-    history: conversationHistory.slice(-20),
-    lastEntities: lastEntities
-})
-        });
+    const response = await fetch(API_URL, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+            message,
+            history: conversationHistory.slice(-20),
+            lastEntities: lastEntities
+        })
+    });
         
         const data = await response.json();
         
@@ -168,7 +174,6 @@ if (data.entities) {
     lastEntities = data.entities;
 }
 
-addMessage(data.intro);
 
             // Add event cards
             data.events.forEach(event => {
