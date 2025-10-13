@@ -1,4 +1,7 @@
-require('dotenv').config({ path: __dirname + '/.env' });
+// Only load .env locally, Railway uses environment variables
+if (process.env.NODE_ENV !== 'production') {
+  require('dotenv').config();
+}
 const express = require('express');
 const cors = require('cors');
 const Anthropic = require('@anthropic-ai/sdk');
