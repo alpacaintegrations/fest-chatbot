@@ -91,7 +91,8 @@ BELANGRIJK: Gebruik common sense bij plaatsnamen!
 
 **ALLEEN vragen bij echt verschillende steden:**
 - Bergen (Noord-Holland) vs Bergen op Zoom (Brabant) → vraag welke
-- Geleen vs Munstergeleen → zijn echt andere plaatsen, maar Geleen is logischer, dus pak die
+- Geleen vs Munstergeleen → liggen bij elkaar, dus pak beide
+- val gerbuiker niet lastig met dit soort keuzes
 
 **NOOIT:**
 ❌ city_id's, venue_id's tonen
@@ -196,7 +197,7 @@ VERBODEN bij >20 events:
   systemInstruction: systemInstruction,
   tools: [{ functionDeclarations: geminiTools }],
   generationConfig: {
-    temperature: 0.5,  // Lager = strikter (0-2, default is 1)
+    temperature: 0.7,  // Lager = strikter (0-2, default is 1)
     topP: 0.8,         // Focust op meest waarschijnlijke antwoorden
     topK: 40           // Beperkt keuzes
   }
