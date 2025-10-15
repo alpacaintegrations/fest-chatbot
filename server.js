@@ -1,79 +1,32 @@
-// Only load .env locally, Railway uses environment variables
-if (process.env.NODE_ENV !== 'production') {
-  require('dotenv').config();
-}
+// Load .env for local development
+require('dotenv').config();
+
 const express = require('express');
 const cors = require('cors');
-const Anthropic = require('@anthropic-ai/sdk');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
+const mcpClient = require('./mcp-client');
+const geminiAdapter = require('./gemini-adapter');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 app.use('/widget', express.static('widget'));
 
-const anthropic = new Anthropic({
-  apiKey: process.env.CLAUDE_API_KEY
-});
-
-// MCP Server URL
-const MCP_SERVER_URL = process.env.MCP_SERVER_URL || 'https://fest.nl/api/mcp.php';
-
-// Helper: call MCP server to get available tools
-async function getMCPTools() {
-  try {
-    const response = await fetch(MCP_SERVER_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        jsonrpc: '2.0',
-        method: 'tools/list',
-        id: 1
-      })
-    });
-    
-    const data = await response.json();
-    console.log('MCP Tools available:', data.result?.tools?.length || 0);
-    return data.result?.tools || [];
-  } catch (error) {
-    console.error('Failed to get MCP tools:', error);
-    return [];
-  }
-}
-
-// Helper: call MCP tool
-async function callMCPTool(toolName, args) {
-  try {
-    const response = await fetch(MCP_SERVER_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        jsonrpc: '2.0',
-        method: 'tools/call',
-        params: {
-          name: toolName,
-          arguments: args
-        },
-        id: Date.now()
-      })
-    });
-    
-    const data = await response.json();
-    console.log(`MCP Tool ${toolName} result:`, data.result);
-    return data.result;
-  } catch (error) {
-    console.error(`MCP Tool ${toolName} failed:`, error);
-    return { error: error.message };
-  }
-}
+// Initialize Gemini
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 // Chat endpoint
 app.post('/chat', async (req, res) => {
   try {
-    const { message, history, lastEntities } = req.body;
+    const { message, history } = req.body;
     console.log('\n=== User message:', message);
     
-    // Get available MCP tools
-    const mcpTools = await getMCPTools();
+    // Track events and dates during function calls
+    let eventsData = [];
+    let requestedDates = new Set();
+    
+    // 1. Haal MCP tools op
+    const mcpTools = await mcpClient.getTools();
     
     if (mcpTools.length === 0) {
       return res.json({ 
@@ -81,48 +34,33 @@ app.post('/chat', async (req, res) => {
       });
     }
     
-    // Convert MCP tools to Claude format
-    const claudeTools = mcpTools.map(tool => ({
-      name: tool.name,
-      description: tool.description,
-      input_schema: tool.inputSchema
-    }));
+    // 2. Converteer naar Gemini format
+    const geminiTools = geminiAdapter.convertToolsToGemini(mcpTools);
     
-    // Build messages with history (text only, no tool results)
-const messages = [];
-
-// Add conversation history as text only
-if (history && history.length > 0) {
-  const recentHistory = history.slice(-16); // Last 8 exchanges
-  recentHistory.forEach(h => {
-    // Only add text content, skip tool use/results from history
-    if (typeof h.content === 'string') {
-      messages.push({
-        role: h.role === 'user' ? 'user' : 'assistant',
-        content: h.content
+    // 3. Build chat history
+    const chatHistory = [];
+    if (history && history.length > 0) {
+      const recentHistory = history.slice(-16);
+      recentHistory.forEach(h => {
+        if (typeof h.content === 'string') {
+          chatHistory.push({
+            role: h.role === 'user' ? 'user' : 'model',
+            parts: [{ text: h.content }]
+          });
+        }
       });
     }
-  });
-}
-
-// Add current message
-messages.push({
-  role: 'user',
-  content: message
-});
     
-    // System prompt
-const today = new Date();
-const tomorrow = new Date(today.getTime() + 86400000);
+    // 4. System prompt
+    const today = new Date();
+    const tomorrow = new Date(today.getTime() + 86400000);
+    const dayOfWeek = today.getDay();
+    const daysUntilFriday = (5 - dayOfWeek + 7) % 7;
+    const friday = new Date(today.getTime() + (daysUntilFriday * 86400000));
+    const saturday = new Date(friday.getTime() + 86400000);
+    const sunday = new Date(saturday.getTime() + 86400000);
 
-// Calculate weekend dates
-const dayOfWeek = today.getDay(); // 0=zondag, 1=maandag, etc
-const daysUntilFriday = (5 - dayOfWeek + 7) % 7;
-const friday = new Date(today.getTime() + (daysUntilFriday * 86400000));
-const saturday = new Date(friday.getTime() + 86400000);
-const sunday = new Date(saturday.getTime() + 86400000);
-
-const systemPrompt = `Je bent een professionele Nederlandse festival assistent voor FestivalInfo.nl.
+    const systemInstruction = `Je bent een professionele Nederlandse festival assistent voor FestivalInfo.nl.
 
 BELANGRIJK: Gebruik ALTIJD de beschikbare festivalinfo tools om events op te zoeken. Zoek NIET online.
 
@@ -141,7 +79,6 @@ BELANGRIJK: Gebruik ALTIJD de beschikbare festivalinfo tools om events op te zoe
 
 BELANGRIJK: "weekend" = vrijdag (vanaf 18:00) + zaterdag + zondag
 
-
 ## FLOW:
 1. Gebruiker vraagt naar concerten/festivals
 2. Zoek eerst stad/provincie/venue met juiste tool
@@ -154,24 +91,44 @@ BELANGRIJK: "weekend" = vrijdag (vanaf 18:00) + zaterdag + zondag
 - DAN: Verfijn de VORIGE zoekopdracht met die extra filter
 - Voorbeeld: "Amsterdam deze week" (84 results) → "metal" → Zoek: Amsterdam + deze week + metal
 
-## FLOW:
-
 ## RESPONSE FORMATTING:
 
 ### Als MEER DAN 20 events gevonden:
 
-1. filter op beschikbaarheid (laat uitverkochte events weg) Zijn het er <20, ga dan naar "als 5-20 events gevonden"
-2. Zeg: "Ik heb [X] opties gevonden. Dat zijn er veel! Ik kan het overzichtelijker maken."
-3. Vraag EXPLICIET: "Wil je het overzichtelijker? Ik kan filteren op:"
-   • **Artiest of voorstelling** (noem een naam)
-   • **Locatie/zaal** (bijv. Paradiso, Melkweg, 013)
-   • **Muziekstijl** (bijv. rock, techno, jazz, metal)
-   • **Tijdstip** (middag, avond, of nacht)
-   • **Dag** (vrijdag, zaterdag, zondag)
-4. Toon 5 DIVERSE voorbeelden (varieer in tijd/locatie) Maximaal 5 events voor overzichtelijkheid
-5. Zeg: "Dit zijn maar een paar voorbeelden uit alle [X] opties. Laat nooit uitverkochte events zien in de voorbeelden."
-6. STOP HIER - vraag NIET naar tickets bij >20 events
-7. ALS user vraagt "toon alle evenementen" → doe dat gewoon
+### Als MEER DAN 20 events gevonden:
+
+KRITISCH - VOLG DEZE STAPPEN EXACT:
+
+1. Filter EERST op beschikbaarheid (verwijder uitverkochte events)
+   - Als er dan <20 over zijn → ga naar "Als 5-20 events gevonden"
+   - Anders ga door naar stap 2
+
+2. ALTIJD zeggen: "Ik heb [X] beschikbare opties gevonden."
+
+3. STOP - toon GEEN events nog!
+
+4. ALTIJD vragen: "Heb je een voorkeur voor:"
+   • Een specifieke artiest of voorstelling
+   • Een bepaalde locatie of zaal
+   • Een muziekstijl (rock, pop, jazz, metal, dance, etc.)
+   • Een tijdstip (middag, avond, nacht)
+   • Een specifieke dag
+
+5. Toon NU pas MAXIMAAL 5 diverse voorbeelden
+   - Varieer in datum, tijd en locatie
+   - GEEN uitverkochte events tonen!
+   - Format: [Artiest] - [dag DD maand] om [tijd] - [Venue], [Stad]
+
+6. Zeg: "Dit zijn maar een paar voorbeelden uit alle [X] beschikbare opties."
+
+7. CRUCIAAL: vraag NIET naar tickets! Alleen naar voorkeuren!
+
+8. Wacht op user input om te verfijnen
+
+VERBODEN bij >20 events:
+❌ Meer dan 5 events tonen
+❌ Vragen naar aantal tickets
+❌ Alle events tonen zonder te vragen
 
 ### Als 5-20 events gevonden:
 - Toon ALLE events overzichtelijk
@@ -198,101 +155,55 @@ BELANGRIJK: "weekend" = vrijdag (vanaf 18:00) + zaterdag + zondag
 - Gebruik emoji's voor leesbaarheid (🎵 🎭 🎤 etc)
 - Compacte formatting`;
 
-    // Call Claude with tools
-    let response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 4096,
-      system: systemPrompt,
-      messages: messages,
-      tools: claudeTools
-    });
-    
-    console.log('Claude response:', response.stop_reason);
-    
-    // Handle tool use
-while (response.stop_reason === 'tool_use') {
-  // Find ALL tool_use blocks
-  const toolUses = response.content.filter(block => block.type === 'tool_use');
-  
-  if (toolUses.length === 0) break;
-  
-  // Add assistant response
-  messages.push({
-    role: 'assistant',
-    content: response.content
-  });
-  
-  // Call ALL tools and collect results
-  const toolResults = [];
-  for (const toolUse of toolUses) {
-    console.log(`Calling MCP tool: ${toolUse.name}`);
-    console.log('With args:', toolUse.input);
-    
-    const toolResult = await callMCPTool(toolUse.name, toolUse.input);
-    
-    toolResults.push({
-      type: 'tool_result',
-      tool_use_id: toolUse.id,
-      content: JSON.stringify(toolResult)
-    });
+    // 5. Initialize model
+    const model = genAI.getGenerativeModel({
+  model: "gemini-2.0-flash-exp",
+  systemInstruction: systemInstruction,
+  tools: [{ functionDeclarations: geminiTools }],
+  generationConfig: {
+    temperature: 0.3,  // Lager = strikter (0-2, default is 1)
+    topP: 0.8,         // Focust op meest waarschijnlijke antwoorden
+    topK: 40           // Beperkt keuzes
   }
-  
-  // Add ALL tool results in one message
-  messages.push({
-    role: 'user',
-    content: toolResults
-  });
-      
-      // Get next response
-      response = await anthropic.messages.create({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 4096,
-        system: systemPrompt,
-        messages: messages,
-        tools: claudeTools
-      });
-      
-      console.log('Claude follow-up:', response.stop_reason);
-    }
-    
-    // Extract final text response
-const textBlock = response.content.find(block => block.type === 'text');
-const reply = textBlock?.text || 'Sorry, ik kon geen antwoord genereren.';
+});
 
-// Try to find events from ALL search_events tool calls
-let eventsData = [];
-let requestedDates = new Set(); // Track which dates Claude requested
-let totalCount = 0;
-
-// First pass: collect requested dates from search_events calls
-for (let i = 0; i < messages.length; i++) {
-  const msg = messages[i];
-  if (msg.role === 'assistant' && Array.isArray(msg.content)) {
-    msg.content.forEach(block => {
-      if (block.type === 'tool_use' && block.name === 'search_events' && block.input?.date) {
-        requestedDates.add(block.input.date);
-      }
+    // 6. Start chat
+    const chat = model.startChat({
+      history: chatHistory
     });
-  }
-}
 
-console.log('Requested dates:', Array.from(requestedDates));
+    // 7. Send message
+    let result = await chat.sendMessage(message);
+    let response = result.response;
 
-// Second pass: collect events and filter by date
-for (let i = 0; i < messages.length; i++) {
-  const msg = messages[i];
-  if (msg.role === 'user' && Array.isArray(msg.content)) {
-    msg.content.forEach(item => {
-      if (item.type === 'tool_result') {
+    // 8. Handle function calls
+    while (response.candidates?.[0]?.content?.parts?.some(part => part.functionCall)) {
+      const functionCalls = response.candidates[0].content.parts
+        .filter(part => part.functionCall)
+        .map(part => part.functionCall);
+
+      console.log('Function calls:', functionCalls.length);
+
+      // Execute ALL function calls
+      const functionResponses = [];
+      for (const fc of functionCalls) {
+        // Track dates from search_events calls
+        if (fc.name === 'search_events' && fc.args?.date) {
+          requestedDates.add(fc.args.date);
+        }
+        
+        const result = await geminiAdapter.executeFunctionCall({
+          name: fc.name,
+          args: fc.args
+        });
+        
+        // Parse events from MCP response
         try {
-          const toolContent = item.content;
-          const parsed = JSON.parse(toolContent);
-          
-          if (parsed.content && parsed.content[0]?.text) {
-            const resultData = JSON.parse(parsed.content[0].text);
-            if (resultData.status === 'success' && resultData.data && Array.isArray(resultData.data)) {
-              // Filter: only events on requested dates
-              const filtered = resultData.data.filter(e => {
+          if (result.response?.content?.[0]?.text) {
+            const parsed = JSON.parse(result.response.content[0].text);
+            if (parsed.status === 'success' && Array.isArray(parsed.data)) {
+              // Filter by requested dates
+              const filtered = parsed.data.filter(e => {
                 const eventDate = e.event_date_time.split(' ')[0];
                 return requestedDates.size === 0 || requestedDates.has(eventDate);
               });
@@ -302,48 +213,61 @@ for (let i = 0; i < messages.length; i++) {
         } catch (e) {
           // Skip parsing errors
         }
+        
+        functionResponses.push({
+          functionResponse: {
+            name: result.name,
+            response: result.response
+          }
+        });
       }
-    });
-  }
-}
 
-// If we have events, return structured response
-if (eventsData.length > 0) {
-  // Filter uitverkochte events
-  const availableEvents = eventsData.filter(e => !e.event_uitverkocht);
-  const totalAvailable = availableEvents.length;
-  
-  // Determine how many to show
-  let eventsToShow;
-  if (totalAvailable > 20) {
-    eventsToShow = availableEvents.slice(0, 5);
-  } else {
-    eventsToShow = availableEvents;
-  }
-  
-  // Split Claude's response into intro and outro
-  const lines = reply.split('\n\n');
-  const intro = lines[0] || reply;
-  const outro = lines[lines.length - 1] || "Laat me weten waar je voorkeur naar uitgaat!";
-  
-  return res.json({
-    intro: intro,
-    events: eventsToShow.map(e => ({
-      id: e.event_id,
-      titel: e.event_name || e.event_titel || 'Event',
-      datum: e.event_date_time.split(' ')[0],
-      tijd: e.event_date_time.split(' ')[1] || '00:00:00',
-      venue: e.podium_name,
-      stad: e.podium_town,
-      beschrijving: e.event_extra_info || 'Geen beschrijving beschikbaar'
-    })),
-    outro: outro,
-    totalCount: totalAvailable
-  });
-}
+      // Send results back to Gemini
+      result = await chat.sendMessage(functionResponses);
+      response = result.response;
+    }
 
-// Fallback: plain text response
-return res.json({ reply });
+    // 9. Extract final text
+    const textPart = response.candidates?.[0]?.content?.parts?.find(part => part.text);
+    const reply = textPart?.text || 'Sorry, ik kon geen antwoord genereren.';
+
+    console.log('Requested dates:', Array.from(requestedDates));
+    console.log('Total events found:', eventsData.length);
+
+    // 10. Return structured response if we have events
+    if (eventsData.length > 0) {
+      const availableEvents = eventsData.filter(e => !e.event_uitverkocht);
+      const totalAvailable = availableEvents.length;
+      
+      let eventsToShow;
+      if (totalAvailable > 20) {
+        eventsToShow = availableEvents.slice(0, 5);
+      } else {
+        eventsToShow = availableEvents;
+      }
+      
+      const lines = reply.split('\n\n');
+      const intro = lines[0] || reply;
+      const outro = lines[lines.length - 1] || "Laat me weten waar je voorkeur naar uitgaat!";
+      
+      return res.json({
+        intro: intro,
+        events: eventsToShow.map(e => ({
+          id: e.event_id,
+          titel: e.event_name || e.event_titel || 'Event',
+          datum: e.event_date_time.split(' ')[0],
+          tijd: e.event_date_time.split(' ')[1] || '00:00:00',
+          venue: e.podium_name,
+          stad: e.podium_town,
+          beschrijving: e.event_extra_info || 'Geen beschrijving beschikbaar'
+        })),
+        outro: outro,
+        totalCount: totalAvailable
+      });
+    }
+
+    // 11. Fallback: plain text
+    return res.json({ reply });
     
   } catch (error) {
     console.error('Error:', error);
@@ -353,9 +277,10 @@ return res.json({ reply });
     });
   }
 });
+
 // Debug endpoint: show available MCP tools
 app.get('/tools', async (req, res) => {
-  const tools = await getMCPTools();
+  const tools = await mcpClient.getTools();
   res.json({ 
     count: tools.length,
     tools: tools.map(t => ({
@@ -367,14 +292,11 @@ app.get('/tools', async (req, res) => {
 });
 
 app.get('/', (req, res) => {
-  res.json({ status: 'Festival Chatbot API with MCP running' });
-});
-app.get('/', (req, res) => {
-  res.json({ status: 'Festival Chatbot API with MCP running' });
+  res.json({ status: 'Festival Chatbot API with MCP + Gemini running' });
 });
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
-  console.log(`MCP Server: ${MCP_SERVER_URL}`);
+  console.log(`Using Gemini with MCP Server: ${process.env.MCP_SERVER_URL || 'https://fest.nl/api/mcp.php'}`);
 });
