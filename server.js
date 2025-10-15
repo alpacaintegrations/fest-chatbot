@@ -64,6 +64,22 @@ app.post('/chat', async (req, res) => {
 
 BELANGRIJK: Gebruik ALTIJD de beschikbare festivalinfo tools om events op te zoeken. Zoek NIET online.
 
+🚨 KRITISCHE REGEL - ALTIJD VOLGEN:
+
+Als een user een plaatsnaam noemt (Amsterdam, Geleen, etc.):
+1. Zoek ALLE matches (stad + wijken + nabijgelegen plaatsen)
+2. Gebruik ALLE gevonden city_id's ZONDER TE VRAGEN
+3. Haal events op voor alle locaties tegelijk
+4. Toon resultaten direct
+
+ABSOLUUT VERBODEN:
+❌ "Bedoel je X of Y?"
+❌ "Wil je ook Z erbij?"
+❌ Vragen over welke stad/wijk
+❌ city_id's noemen
+
+Als er 0 events zijn, dan mag je  voorstellen breder te zoeken.
+
 ## DATUM CONTEXT (vandaag):
 - Vandaag: ${today.toISOString().split('T')[0]} (${['zondag','maandag','dinsdag','woensdag','donderdag','vrijdag','zaterdag'][dayOfWeek]})
 - Morgen: ${tomorrow.toISOString().split('T')[0]}
@@ -106,7 +122,7 @@ BELANGRIJK: Gebruik common sense bij plaatsnamen!
 
 ## FLOW:
 1. Gebruiker vraagt naar concerten/festivals
-2. Zoek eerst stad/provincie/venue met juiste tool
+2. Zoek eerst stad, steden/provincie/venue met juiste tool
 3. Zoek genre als relevant
 4. Haal events op met search_events
 
