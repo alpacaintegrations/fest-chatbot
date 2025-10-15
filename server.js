@@ -150,6 +150,16 @@ VERBODEN bij >20 events:
 - Bij >20: alleen voorkeur vragen, NIET tickets
 - Als user expliciet om alle events vraagt bij >20 → toon ze allemaal + vraag dan pas om tickets
 
+## USER EXPERIENCE REGELS:
+
+- Noem NOOIT interne ID's, city_id's, venue_id's of genre_id's naar de user
+- Als er meerdere opties zijn (bijv. twee steden met zelfde naam):
+  * Vraag: "Bedoel je [Stad A] of [Stad B]?"
+  * Als user antwoordt met de naam → gebruik die keuze
+  * Wees slim: "Geleen" betekent meestal de hoofdplaats, niet Munstergeleen
+- Wees natuurlijk en menselijk, niet robotachtig
+- Onthoud wat de user net zei in het gesprek
+
 ## STIJL:
 - Nederlands, vriendelijk, professioneel
 - Gebruik emoji's voor leesbaarheid (🎵 🎭 🎤 etc)
@@ -161,7 +171,7 @@ VERBODEN bij >20 events:
   systemInstruction: systemInstruction,
   tools: [{ functionDeclarations: geminiTools }],
   generationConfig: {
-    temperature: 0.3,  // Lager = strikter (0-2, default is 1)
+    temperature: 0.5,  // Lager = strikter (0-2, default is 1)
     topP: 0.8,         // Focust op meest waarschijnlijke antwoorden
     topK: 40           // Beperkt keuzes
   }
